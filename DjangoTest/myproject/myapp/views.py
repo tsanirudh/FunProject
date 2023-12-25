@@ -18,7 +18,32 @@ ssh_client = paramiko.SSHClient()
 askOllama = ""
 ipAddress = ""
 port = ""
+storedLocations = []
 # Function to establish an SSH connection to your MacBook
+
+
+
+def store_location(request):
+    if request.method == 'POST':
+        payload = json.loads(request.body)
+        # if the payload has an item named data
+        if 'data' in payload:
+            data = json.loads(payload['data'])  # Convert data to a dictionary
+            print("This is from data", data)
+            print(data['location'])
+            location = data['location']
+            markDescription = data['markDescription']
+            markers = data['markers']
+            # Store the location in the storedLocations array
+            storedLocations.append({
+                'location': location,
+                'markDescription': markDescription,
+                'markers': markers
+            })
+        return JsonResponse({"message": "Location stored successfully!"})
+    else:
+        return JsonResponse({"storedLocations": storedLocations})
+
 def connect_to_macbook():
     # Update the following variables with your MacBook's SSH details
     hostname = 'Anirudhs-MBP.home'
@@ -32,10 +57,8 @@ def connect_to_macbook():
     try:
         # Connect to the MacBook
         ssh_client.connect(hostname, port, username, password)
-        print("Connected to MacBook via SSH")
 
         ipAddress = ssh_client.get_transport().sock.getpeername()[0]
-        print("IP Address:", ipAddress)
 
         # Run a command on the server
         command = "ls -l"
@@ -43,7 +66,6 @@ def connect_to_macbook():
 
         # Get the command output
         output = stdout.read().decode('utf-8')
-        print("Command output:", output)
     
 
         # now start ollama ssh server
@@ -54,13 +76,11 @@ def connect_to_macbook():
 
         # Get the command output
         output = stdout.read().decode('utf-8')
-        print("Command output:", output)
 
         return JsonResponse({"message": "Connected to MacBook via SSH", "output": output})
     
     
     except Exception as e:
-        print(f"Error connecting to MacBook: {str(e)}")
         return JsonResponse({"message": f"Error connecting to MacBook: {str(e)}"})
         # Close the SSH client
         
@@ -75,7 +95,6 @@ def send_command(request):
     # //get the output
     # //return the output
 
-    print("ip address is", ip)
 
     # Update the following variables with your MacBook's SSH details
     
@@ -90,12 +109,10 @@ def item_list(request):
     # Example print statement
     if request.method == 'POST':
         payload = json.loads(request.body)
-        print("Debug --->>>>>>>>: Items in item_list view:", payload)
         item = Item.objects.create(name=payload['foo'])
         item.save()
         return JsonResponse({"message": "Item added successfully!"})
     else:
-        print("Debug --->>>>>>>>: :", items)
         data = {
             'data': list(items.values('id', 'name')),
             "credentials": {
@@ -123,7 +140,6 @@ def addItem(request):
     item.save()
 
     # Example print statement
-    print("Debug: Item added in addItem view:", item)
 
     return JsonResponse({"message": "Item added successfully!"})
 
