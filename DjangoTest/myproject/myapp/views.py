@@ -1,6 +1,7 @@
 import json
 import sys
 import paramiko
+import subprocess
 from django.shortcuts import render
 from django.http import JsonResponse
 from .models import Item
@@ -9,9 +10,10 @@ from .serializers import ItemSerializer
 from django.middleware import csrf
 from django.http import JsonResponse
 import paramiko
-print("Python version", sys.path)
+import socket
+from langchain.llms import Ollama
 
-
+ollama = Ollama(base_url='http://localhost:11434', model="gemma")
 items = []
 
 ssh_client = paramiko.SSHClient()
@@ -86,15 +88,32 @@ def connect_to_macbook():
         
 
 #  prevent CSRF check for this view only
+    
+
+def start_ollama(request):
+    # Check if ollama server is already running on port 11434
+    ip = "127.0.0.1"
+    port = 11434
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((ip, port))
+    if result == 0:
+        return JsonResponse({"message": "Ollama server is already running on port 11434"})
+    
+    # Run the command to start ollama server with gemma model
+    print("Starting Ollama server")
+    command = 'ollama serve gemma:2b'
+    subprocess.run(command, shell=True)
+    return JsonResponse({"message": "Ollama server started successfully!"})
+
+    # run the command in this windows laptop 
 
 def send_command(request):
-    # Function to send a command to your MacBook
-    ip = "192.168.1.155"
-    port = 11434
-    # //send a command to the ollama server
-    # //get the output
-    # //return the output
 
+    payload = json.loads(request.body)
+    print(" --->>>>>>>Sending command to Ollama server", payload)
+    input = payload['input']
+    response = ollama(input)
+    return JsonResponse({"response": response})
 
     # Update the following variables with your MacBook's SSH details
     
